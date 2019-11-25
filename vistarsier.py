@@ -149,23 +149,20 @@ def display_change(current, change):
     dec_change *= 255
     dec_change = colormaps.reverse_greenscale()[dec_change.astype('int')]
 
-    # Replace grey values with change
-    #inc_mask = inc_change > 0
+    # Apply increased signal colour
     inc_out = current.copy().astype('float64')
     inc_change = inc_change.astype('float64')
     inc_out[:,:,:,0] = inc_change[:,:,:,0]*inc_change[:,:,:,1]/255 + (255-inc_change[:,:,:,0])*current[:,:,:,0]/255
     inc_out[:,:,:,1] = inc_change[:,:,:,0]*inc_change[:,:,:,2]/255 + (255-inc_change[:,:,:,0])*current[:,:,:,1]/255
     inc_out[:,:,:,2] = inc_change[:,:,:,0]*inc_change[:,:,:,3]/255 + (255-inc_change[:,:,:,0])*current[:,:,:,2]/255
 
-    # Replace grey values with change
+    # Apply decreased signal colour
     dec_out = current.copy().astype('float64')
     dec_change = dec_change.astype('float64')
-    dec_out[:,:,:,0] = dec_change[:,:,:,0]*dec_change[:,:,:,1] + (1-dec_change[:,:,:,0])*current[:,:,:,0]
-    dec_out[:,:,:,1] = dec_change[:,:,:,0]*dec_change[:,:,:,2] + (1-dec_change[:,:,:,0])*current[:,:,:,1]
-    dec_out[:,:,:,2] = dec_change[:,:,:,0]*dec_change[:,:,:,3] + (1-dec_change[:,:,:,0])*current[:,:,:,2]
-    #dec_mask = dec_change > 0
-    #dec_out = current.copy()
-    #dec_out[dec_mask] = dec_change[dec_mask]
+    dec_out[:,:,:,0] = dec_change[:,:,:,0]*dec_change[:,:,:,1]/255 + (255-dec_change[:,:,:,0])*current[:,:,:,0]/255
+    dec_out[:,:,:,1] = dec_change[:,:,:,0]*dec_change[:,:,:,2]/255 + (255-dec_change[:,:,:,0])*current[:,:,:,1]/255
+    dec_out[:,:,:,2] = dec_change[:,:,:,0]*dec_change[:,:,:,3]/255 + (255-dec_change[:,:,:,0])*current[:,:,:,2]/255
+
 
     return (inc_out.astype('uint8'), dec_out.astype('uint8'))
 
