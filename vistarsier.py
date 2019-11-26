@@ -53,9 +53,9 @@ def vistarsier_compare(c, p, min_val=-1., max_val=5., min_change=0.8, max_change
     change = c - p
     # Ignore change outside of minimuim and maximum values
     change[c < min_val*cstd] = 0
-    change[p < min_val*pstd] = 0
+    change[p < min_val*cstd] = 0
     change[c > max_val*cstd] = 0
-    change[p > max_val*pstd] = 0
+    change[p > max_val*cstd] = 0
     change[np.abs(change) < min_change*cstd] = 0
     change[np.abs(change) > max_change*cstd] = 0
     print('...VisTarsier comparison complete.')
