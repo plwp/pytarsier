@@ -8,12 +8,12 @@ import nibabel as nib
 import colormaps
 import time
 
-FIXED_OUT_N4 = 'n4out-fixed.nii.gz'
-FLOATING_OUT_N4 = 'n4out-floating.nii.gz'
-FIXED_OUT_BET = 'betout-fixed.nii.gz'
-FLOATING_OUT_BET = 'betout-floating.nii.gz'
-REG_OUT = 'warped.nii.gz'
-REG_MAT = 'out0GenericAffine.mat'
+FIXED_OUT_N4 = '/dicom/n4out-fixed.nii.gz'
+FLOATING_OUT_N4 = '/dicom/n4out-floating.nii.gz'
+FIXED_OUT_BET = '/dicom/betout-fixed.nii.gz'
+FLOATING_OUT_BET = '/dicom/betout-floating.nii.gz'
+REG_OUT = '/dicom/warped.nii.gz'
+REG_MAT = '/dicom/out0GenericAffine.mat'
 
 def vistarsier_compare(c, p, min_val=-1., max_val=5., min_change=0.8, max_change=3.):
     """ VisTarsier's compare operation
@@ -53,9 +53,9 @@ def vistarsier_compare(c, p, min_val=-1., max_val=5., min_change=0.8, max_change
     change = c - p
     # Ignore change outside of minimuim and maximum values
     change[c < min_val*cstd] = 0
-    change[p < min_val*pstd] = 0
+    change[p < min_val*cstd] = 0
     change[c > max_val*cstd] = 0
-    change[p > max_val*pstd] = 0
+    change[p > max_val*cstd] = 0
     change[np.abs(change) < min_change*cstd] = 0
     change[np.abs(change) > max_change*cstd] = 0
     print('...VisTarsier comparison complete.')
@@ -149,23 +149,20 @@ def display_change(current, change):
     dec_change *= 255
     dec_change = colormaps.reverse_greenscale()[dec_change.astype('int')]
 
-    # Replace grey values with change
-    #inc_mask = inc_change > 0
+    # Apply increased signal colour
     inc_out = current.copy().astype('float64')
     inc_change = inc_change.astype('float64')
     inc_out[:,:,:,0] = inc_change[:,:,:,0]*inc_change[:,:,:,1]/255 + (255-inc_change[:,:,:,0])*current[:,:,:,0]/255
     inc_out[:,:,:,1] = inc_change[:,:,:,0]*inc_change[:,:,:,2]/255 + (255-inc_change[:,:,:,0])*current[:,:,:,1]/255
     inc_out[:,:,:,2] = inc_change[:,:,:,0]*inc_change[:,:,:,3]/255 + (255-inc_change[:,:,:,0])*current[:,:,:,2]/255
 
-    # Replace grey values with change
+    # Apply decreased signal colour
     dec_out = current.copy().astype('float64')
     dec_change = dec_change.astype('float64')
-    dec_out[:,:,:,0] = dec_change[:,:,:,0]*dec_change[:,:,:,1] + (1-dec_change[:,:,:,0])*current[:,:,:,0]
-    dec_out[:,:,:,1] = dec_change[:,:,:,0]*dec_change[:,:,:,2] + (1-dec_change[:,:,:,0])*current[:,:,:,1]
-    dec_out[:,:,:,2] = dec_change[:,:,:,0]*dec_change[:,:,:,3] + (1-dec_change[:,:,:,0])*current[:,:,:,2]
-    #dec_mask = dec_change > 0
-    #dec_out = current.copy()
-    #dec_out[dec_mask] = dec_change[dec_mask]
+    dec_out[:,:,:,0] = dec_change[:,:,:,0]*dec_change[:,:,:,1]/255 + (255-dec_change[:,:,:,0])*current[:,:,:,0]/255
+    dec_out[:,:,:,1] = dec_change[:,:,:,0]*dec_change[:,:,:,2]/255 + (255-dec_change[:,:,:,0])*current[:,:,:,1]/255
+    dec_out[:,:,:,2] = dec_change[:,:,:,0]*dec_change[:,:,:,3]/255 + (255-dec_change[:,:,:,0])*current[:,:,:,2]/255
+
 
     return (inc_out.astype('uint8'), dec_out.astype('uint8'))
 
