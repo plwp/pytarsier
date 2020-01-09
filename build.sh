@@ -1,1 +1,1 @@
-docker build -t jarrelscy/pytarsier .
+docker build -t jarrelscy/vistarsier .

@@ -7,16 +7,16 @@ import requests.packages.urllib3
 requests.packages.urllib3.disable_warnings
 import os
 import json
-import glob 
+import glob
 import sys
-import time 
+import time
 import numpy as np
 import zipfile
 import pprint
-import shutil 
+import shutil
 import tempfile
-from vistarsier import *
 import nibabel as nib
+import subsystem
 
 def cleanServer(server):
     server.strip()
@@ -81,17 +81,17 @@ def get(sess, url, **kwargs):
         print ("Request Failed")
         print ("    " + str(e))
         sys.exit(1)
-    return r  
+    return r
 def get_frames(sess, host, experiment_id, scan_id):
     r = get(sess, host+ "/data/experiments/%s/scans/%s" % (experiment_id, scan_id), params={"format":"json"})
     return r.json()['items'][0]['data_fields']['frames']
-    
+
 def identify_scan(sess, host, session_id):
     # Get list of scan ids
     print ("Get scan list for session ID %s." % session_id)
     r = get(sess, host + "/data/experiments/%s/scans" % session_id, params={"format": "json"})
     scanRequestResultList = r.json()["ResultSet"]["Result"]
-    scanIDList = sorted([(scan['ID'],scan['series_description'],int(get_frames(sess, host, session_id, scan['ID']))) for scan in scanRequestResultList if 'flair' in scan['series_description'].lower() and 'spc' in scan['series_description'].lower()], key=lambda x:-x[2])    
+    scanIDList = sorted([(scan['ID'],scan['series_description'],int(get_frames(sess, host, session_id, scan['ID']))) for scan in scanRequestResultList if 'flair' in scan['series_description'].lower() and 'spc' in scan['series_description'].lower()], key=lambda x:-x[2])
     print ('Found scans ',scanIDList)
     print ('Choosing', scanIDList[0])
     return scanIDList[0][0]
@@ -131,8 +131,8 @@ def map_output(output_np_array, dses, output_folder, addition, uid_addition):
     for i, ds in enumerate(dses):
         ds.PhotometricInterpretation = 'RGB'
         ds.SamplesPerPixel = 3
-        ds.PlanarConfiguration = 0 
-        ds.PixelData = output_np_array[:,:,i,:].astype(np.uint8).transpose((1,0,2)).tobytes() 
+        ds.PlanarConfiguration = 0
+        ds.PixelData = output_np_array[:,:,i,:].astype(np.uint8).transpose((1,0,2)).tobytes()
         ds.Rows = output_np_array.shape[1]
         ds.Columns = output_np_array.shape[0]
         ds.BitsAllocated = 8
@@ -160,7 +160,7 @@ def upload_dir(sess, host, upload_dir, project, subjectID, session, scanid, work
         r.raise_for_status()
     except:
         print (traceback.format_exc())
-    
+
     if workflowId is not None:
         queryArgs["event_id"] = workflowId
     if uploadByRef:
@@ -175,7 +175,7 @@ def upload_dir(sess, host, upload_dir, project, subjectID, session, scanid, work
         files = {'file': open(tempFilePath, 'rb')}
         r = sess.post(host + "/data/experiments/%s/scans/%s/resources/DICOM/files" % (session, scanid), params=queryArgs, files=files)
         r.raise_for_status()
-        os.remove(tempFilePath)  
+        os.remove(tempFilePath)
 
 def get_experiment_details(sess, host, project, id):
     if 'XNAT' in id:  # if its an experiment-id then you don't need the project
@@ -197,7 +197,7 @@ def get_experiment_details(sess, host, project, id):
     return project, subjectID, id
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Run pytarsier on session")
+    parser = argparse.ArgumentParser(description="Run vistarsier on session")
     parser.add_argument("--host", default="http://ahmldicom01.baysidehealth.intra", help="XNAT host")
     parser.add_argument("--user", help="XNAT username", required=True)
     parser.add_argument("--password", help="Password", required=True)
@@ -230,15 +230,15 @@ if __name__ == '__main__':
     sess = requests.Session()
     sess.verify = False
     sess.auth = (args.user, args.password)
-    
+
     project1, subjectID1, fixed_session_id = get_experiment_details(sess, host, project, fixed_session_id)
     project2, subjectID2, floating_session_id = get_experiment_details(sess, host, project, floating_session_id)
-    
+
     assert subjectID1 == subjectID2
     subjectID = subjectID1
-    assert project1 == project2 
+    assert project1 == project2
     project = project1
-    
+
     # Set up working directory
     if not os.access(dicomdir, os.R_OK):
         print ('Making DICOM directory %s' % dicomdir)
@@ -251,25 +251,25 @@ if __name__ == '__main__':
     if not os.access(outputdecdir, os.R_OK):
         print ('Making output DICOM directory %s' % outputdecdir)
         os.mkdir(outputdecdir)
-    
-    
+
+
     if fixed_scan_id is None:
         print ('Fixed scan id is none, trying to identify ...')
         fixed_scan_id = identify_scan(sess, host, fixed_session_id)
     if floating_scan_id is None:
         print ('Floating scan id is none, trying to identify ...')
         floating_scan_id = identify_scan(sess, host, floating_session_id)
-    
+
     fixed_dicom_dir = os.path.join(dicomdir, 'fixed')
     if not os.path.isdir(fixed_dicom_dir):
         print ('Making fixed DICOM directory %s.' % fixed_dicom_dir)
         os.mkdir(fixed_dicom_dir)
-        
+
     floating_dicom_dir = os.path.join(dicomdir, 'floating')
     if not os.path.isdir(floating_dicom_dir):
         print ('Making floating DICOM directory %s.' % floating_dicom_dir)
         os.mkdir(floating_dicom_dir)
-        
+
     for f in os.listdir(fixed_dicom_dir):
         os.remove(os.path.join(fixed_dicom_dir, f))
     for f in os.listdir(floating_dicom_dir):
@@ -278,48 +278,43 @@ if __name__ == '__main__':
         os.remove(os.path.join(outputincdir, f))
     for f in os.listdir(outputdecdir):
         os.remove(os.path.join(outputdecdir, f))
-    
+
     download_series(sess, host, fixed_session_id, fixed_scan_id, fixed_dicom_dir)
     download_series(sess, host, floating_session_id, floating_scan_id, floating_dicom_dir)
-    
+
     fixed_nifti = os.path.join(dicomdir, 'fixed.nii')
     floating_nifti = os.path.join(dicomdir, 'floating.nii')
     os.chdir(dicomdir)
     dicom2nifti.dicom_series_to_nifti(fixed_dicom_dir, fixed_nifti, reorient_nifti=False)
     dicom2nifti.dicom_series_to_nifti(floating_dicom_dir, floating_nifti, reorient_nifti=False)
-    
-    # Run biascorrection | skull stripping | registration
-    prior_proc, current_proc = pre_process(floating_nifti, fixed_nifti)
-        
-    # Load pre-processed images
-    pimg = nib.load(prior_proc)
-    cimg = nib.load(current_proc)
-    # Calculate change
-    change = vistarsier_compare(cimg.get_fdata(), pimg.get_fdata())
-    # Apply colourmaps
-    print('Applying colormaps...')
-    inc_output, dec_output = display_change(cimg.get_fdata(), change)
-    
+
+    # Pre-processing is handled by the C# implementation directly
+    subprocess.run(["dotnet", "/usr/share/vistarsier/cmd/VisTarsier.CommandLineTool.dll", fixed_nifti, floating_nifti, dicomdir+'/'], shell=True, check=True)
+    # Here are our 3 output files.
+    inc_output = os.path.join(dicomdir, 'vt-increase.nii')
+    dec_output = os.path.join(dicomdir, 'vt-decrease.nii')
+    prior_output = os.path.join(dicomdir, 'vt-prior.nii') # You might want to handle the prior resliced output as well
+
+
     comparison_date = pydicom.read_file(os.path.join(floating_dicom_dir,os.listdir(floating_dicom_dir)[0])).StudyDate
     dses = [pydicom.dcmread(open(os.path.join(fixed_dicom_dir,f),'rb')) for f in sorted(os.listdir(fixed_dicom_dir), key=lambda x:-int(x.split('-')[-2]) )]
-    
+
     map_output(inc_output, dses, outputincdir, '-'+comparison_date+'-inc', '000'+comparison_date)
-    
+
     dses = [pydicom.dcmread(open(os.path.join(fixed_dicom_dir,f),'rb')) for f in sorted(os.listdir(fixed_dicom_dir), key=lambda x:-int(x.split('-')[-2]) )]
-    
+
     map_output(dec_output, dses, outputdecdir, '-'+comparison_date+'-dec', '100'+comparison_date)
     print (inc_output.shape, dec_output.shape, len(dses), dses[0].pixel_array.shape)
-        
+
     print ('upload increased')
     series_description = pydicom.read_file(os.path.join(outputincdir, '0.dcm')).SeriesDescription
-    series_uid = pydicom.read_file(os.path.join(outputincdir, '0.dcm')).SeriesInstanceUID    
+    series_uid = pydicom.read_file(os.path.join(outputincdir, '0.dcm')).SeriesInstanceUID
     upload_dir(sess, host, outputincdir, project, subjectID, fixed_session_id, fixed_scan_id+'000'+comparison_date, workflowId, uploadByRef, series_description, series_uid)
     print ('upload decreased')
     series_description = pydicom.read_file(os.path.join(outputdecdir, '0.dcm')).SeriesDescription
-    series_uid = pydicom.read_file(os.path.join(outputdecdir, '0.dcm')).SeriesInstanceUID   
+    series_uid = pydicom.read_file(os.path.join(outputdecdir, '0.dcm')).SeriesInstanceUID
     upload_dir(sess, host, outputdecdir, project, subjectID, fixed_session_id, fixed_scan_id+'100'+comparison_date, workflowId, uploadByRef, series_description, series_uid)
     print('...ALL DONE!')
-    
+
     r=sess.post(host+'/xapi/viewer/projects/'+project+'/experiments/'+fixed_session_id, data={})
     r.raise_for_status()
-    
