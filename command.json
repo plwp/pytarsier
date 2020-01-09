@@ -1,0 +1,139 @@
+{
+  "name": "pytarsier-session",
+  "description": "Runs pytarsier on a session's scans, and uploads the comparison sequence",
+  "version": "1.0",
+  "schema-version": "1.0",
+  "image": "jarrelscy/pytarsier:latest",
+  "type": "docker",
+  "command-line": "python orchestrator.py #FIXED_SESSION_ID# #FIXED_SCAN_ID# #FLOATING_SESSION_ID# #FLOATING_SCAN_ID# #PROJECT# --host $XNAT_HOST --user $XNAT_USER --password $XNAT_PASS --dicomdir /dicom",
+  "override-entrypoint": true,
+  "mounts": [
+    {
+      "name": "dicom",
+      "writable": true,
+      "path": "/dicom"
+    }
+  ],
+  "environment-variables": {},
+  "ports": {},
+  "inputs": [
+    {
+      "name": "fixed_session_id",
+      "description": "XNAT ID of the fixed session",
+      "type": "string",
+      "matcher": null,
+      "default-value": null,
+      "required": true,
+      "replacement-key": "#FIXED_SESSION_ID#",
+      "sensitive": null,
+      "command-line-flag": "--fixed_session_id",
+      "command-line-separator": null,
+      "true-value": null,
+      "false-value": null
+    },
+    {
+      "name": "fixed_scan_id",
+      "description": "XNAT ID of the fixed scan, if not specified orchestrator will guess which scan to use based on number of images and series description",
+      "type": "string",
+      "matcher": null,
+      "default-value": "None",
+      "required": false,
+      "replacement-key": "#FIXED_SCAN_ID#",
+      "sensitive": null,
+      "command-line-flag": "--fixed_scan_id",
+      "command-line-separator": null,
+      "true-value": null,
+      "false-value": null
+    },
+    {
+      "name": "floating_session_id",
+      "description": "XNAT ID of the floating session",
+      "type": "string",
+      "matcher": null,
+      "default-value": null,
+      "required": true,
+      "replacement-key": "#FLOATING_SESSION_ID#",
+      "sensitive": null,
+      "command-line-flag": "--floating_session_id",
+      "command-line-separator": null,
+      "true-value": null,
+      "false-value": null
+    },
+    {
+      "name": "floating_scan_id",
+      "description": "XNAT ID of the floating scan, if not specified orchestrator will guess which scan to use based on number of images and series description",
+      "type": "string",
+      "matcher": null,
+      "default-value": "None",
+      "required": false,
+      "replacement-key": "#FLOATING_SCAN_ID#",
+      "sensitive": null,
+      "command-line-flag": "--floating_scan_id",
+      "command-line-separator": null,
+      "true-value": null,
+      "false-value": null
+    },
+    {
+      "name": "project",
+      "description": "XNAT project. Defaults to Alfred. You don't have to enter this if you're using the web interface",
+      "type": "string",
+      "matcher": null,
+      "default-value": "Alfred",
+      "required": false,
+      "replacement-key": "#PROJECT#",
+      "sensitive": null,
+      "command-line-flag": "--project",
+      "command-line-separator": null,
+      "true-value": null,
+      "false-value": null
+    }
+  ],
+  "outputs": [],
+  "xnat": [
+    {
+      "name": "pytarsier-session-session",
+      "label": null,
+      "description": "Run pytarsier-session on a Session",
+      "contexts": [
+        "xnat:imageSessionData"
+      ],
+      "external-inputs": [
+        {
+          "name": "session",
+          "description": "Input session",
+          "type": "Session",
+          "matcher": null,
+          "default-value": null,
+          "required": true,
+          "replacement-key": null,
+          "sensitive": null,
+          "provides-value-for-command-input": null,
+          "provides-files-for-command-mount": null,
+          "via-setup-command": null,
+          "user-settable": null,
+          "load-children": true
+        }
+      ],
+      "derived-inputs": [
+        {
+          "name": "fixed-session-id",
+          "description": "The fixed session's id",
+          "type": "string",
+          "matcher": null,
+          "default-value": null,
+          "required": true,
+          "replacement-key": null,
+          "sensitive": null,
+          "provides-value-for-command-input": "fixed_session_id",
+          "provides-files-for-command-mount": null,
+          "user-settable": null,
+          "load-children": true,
+          "derived-from-wrapper-input": "session",
+          "derived-from-xnat-object-property": "id",
+          "via-setup-command": null
+        }
+      ],
+      "output-handlers": []
+    }
+  ]
+}

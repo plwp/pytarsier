@@ -1,2 +1,5 @@
 numpy
 nibabel
+dicom2nifti
+requests==2.21.0
+pydicom

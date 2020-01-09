@@ -8,12 +8,12 @@ import nibabel as nib
 import colormaps
 import time
 
-FIXED_OUT_N4 = 'n4out-fixed.nii.gz'
-FLOATING_OUT_N4 = 'n4out-floating.nii.gz'
-FIXED_OUT_BET = 'betout-fixed.nii.gz'
-FLOATING_OUT_BET = 'betout-floating.nii.gz'
-REG_OUT = 'warped.nii.gz'
-REG_MAT = 'out0GenericAffine.mat'
+FIXED_OUT_N4 = '/dicom/n4out-fixed.nii.gz'
+FLOATING_OUT_N4 = '/dicom/n4out-floating.nii.gz'
+FIXED_OUT_BET = '/dicom/betout-fixed.nii.gz'
+FLOATING_OUT_BET = '/dicom/betout-floating.nii.gz'
+REG_OUT = '/dicom/warped.nii.gz'
+REG_MAT = '/dicom/out0GenericAffine.mat'
 
 def vistarsier_compare(c, p, min_val=-1., max_val=5., min_change=0.8, max_change=3.):
     """ VisTarsier's compare operation
